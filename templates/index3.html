@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autocomplete App with Notifications</title>
+
+    <!-- Google Font (Roboto) -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(45deg, #00C9FF, #92FE9D); /* Gradient background */
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .background-blur {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url('https://source.unsplash.com/random/1600x900'); /* Random background image */
+            background-size: cover;
+            filter: blur(8px); /* Blurring the background */
+            z-index: -1; /* Send to back */
+        }
+
+        .autocomplete-container {
+            background-color: rgba(255, 255, 255, 0.8); /* Slightly transparent white */
+            backdrop-filter: blur(20px); /* Adding more blur effect to the background */
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0px 20px 50px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #343a40;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: 3px solid transparent;
+            background: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+
+        input:focus {
+            outline: none;
+            border-image: linear-gradient(45deg, #6A5ACD, #00BFFF) 1; /* Gradient border */
+            box-shadow: 0px 0px 15px rgba(0, 191, 255, 0.6); /* Glowing shadow */
+        }
+
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin-top: 15px;
+            max-height: 200px; /* Limit the height */
+            overflow-y: auto; /* Add scroll if overflow */
+        }
+
+        li {
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.7); /* Transparent background */
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        li:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Notification styles */
+        .notification {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #343a40;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        .notification.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Blurred Background -->
+    <div class="background-blur"></div>
+
+    <div class="autocomplete-container">
+        <h1>Autocomplete Search</h1>
+        <input type="text" id="queryInput" class="form-control" placeholder="Start typing..." oninput="getSuggestions()">
+        <ul id="suggestionsList"></ul>
+    </div>
+
+    <!-- Notification Box -->
+    <div id="notificationBox" class="notification"></div>
+
+    <!-- JavaScript for Autocomplete and Notifications -->
+    <script>
+        let debounceTimer;
+        const debounceDelay = 500; // Delay in milliseconds
+
+        async function getSuggestions() {
+            const query = document.getElementById('queryInput').value;
+
+            // Clear suggestions if input is empty
+            if (query.length === 0) {
+                document.getElementById('suggestionsList').innerHTML = "";
+                return;
+            }
+
+            // Debouncing
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(async () => {
+                const response = await fetch('/autocomplete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+                const suggestionsList = document.getElementById('suggestionsList');
+                suggestionsList.innerHTML = "";
+
+                data.suggestions.forEach(suggestion => {
+                    const li = document.createElement('li');
+                    li.textContent = suggestion;
+                    suggestionsList.appendChild(li);
+                });
+
+                if (data.message) {
+                    showNotification(data.message);
+                }
+            }, debounceDelay);
+        }
+
+        function showNotification(message) {
+            const notificationBox = document.getElementById('notificationBox');
+            notificationBox.textContent = message;
+            notificationBox.classList.add('show');
+
+            setTimeout(() => {
+                notificationBox.classList.remove('show');
+            }, 3000); // Hide notification after 3 seconds
+        }
+    </script>
+
+</body>
+</html>
