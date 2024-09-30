@@ -126,4 +126,7 @@ def autocomplete():
         return jsonify({'error': 'An error occurred while processing your request.'}), 500
 
 # Run the app
-
+if __name__ == "__main__":
+    port = random.randint(1024, 65535)  # Random port between 1024 and 65535
+    print(f"Running on port {port}")
+    app.run(debug=True, port=port)
